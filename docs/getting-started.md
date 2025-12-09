@@ -1,8 +1,9 @@
 # Getting Started
 
-## Install
+## Install (from this repo)
+Install directly from `main` so you always get the latest CLI:
 ```bash
-npm i -g specs
+npm i -g git+https://github.com/ganesh47/specs.git#main
 ```
 
 ## Initialize a repo
