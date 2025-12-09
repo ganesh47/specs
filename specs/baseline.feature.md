@@ -13,7 +13,7 @@ features:
   - id: specs.github-sync
     accept:
       - "Running specs sync creates or updates GitHub issues for specs"
-      - "Issues are labeled with spec and added to project 'Spec Funnel' when available"
+      - "Issues are labeled with spec and added to project 'Specs Board' when available"
   - id: specs.coverage-ci
     accept:
       - "Workflow .github/workflows/spec-coverage.yml runs specs coverage on push and PR"

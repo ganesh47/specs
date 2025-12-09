@@ -9,6 +9,10 @@ export interface SpecsConfig {
   };
   github?: {
     project_name?: string;
+    project_owner?: string;
+    project_number?: number;
+    status_field?: string;
+    status_backlog?: string;
     issue_labels?: string[];
   };
   codex?: {
@@ -23,6 +27,10 @@ const defaultConfig: SpecsConfig = {
   },
   github: {
     project_name: undefined,
+    project_owner: undefined,
+    project_number: undefined,
+    status_field: 'Status',
+    status_backlog: 'Backlog',
     issue_labels: ['spec'],
   },
   codex: {

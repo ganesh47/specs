@@ -4,7 +4,11 @@ specs:
   format: 'markdown+yaml'
 
 github:
-  project_name: 'Spec Funnel'
+  project_owner: 'ganesh47'
+  project_number: 6
+  project_name: 'Specs Board'
+  status_field: 'Status'
+  status_backlog: 'Todo'
   issue_labels:
     - 'spec'
     - 'feature'

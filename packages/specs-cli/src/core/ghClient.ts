@@ -7,8 +7,21 @@ import { SpecDoc } from './specParser';
 
 const exec = promisify(cpExec);
 
+type ProjectConfig = {
+  project_name?: string;
+  project_owner?: string;
+  project_number?: number;
+  status_field?: string;
+  status_backlog?: string;
+};
+
 export class GhClient {
   constructor(private cwd: string = process.cwd()) {}
+
+  private projectCache: Record<
+    string,
+    { projectId: string; fieldId?: string; options?: Record<string, string> }
+  > = {};
 
   private async execGh(args: string): Promise<string> {
     try {
@@ -54,13 +67,52 @@ export class GhClient {
     return match ? Number(match[1]) : 0;
   }
 
-  async addToProject(projectName: string, issueNumber: number): Promise<void> {
-    if (!projectName) return;
-    try {
-      await this.execGh(`project item-add --project "${projectName}" --issue ${issueNumber}`);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.warn(`Unable to add issue #${issueNumber} to project ${projectName}: ${String(error)}`);
+  async addToProject(projectCfg: ProjectConfig, issueNumber: number): Promise<void> {
+    const { project_owner, project_number, project_name } = projectCfg;
+
+    // Prefer Projects (v2) via owner + number if available.
+    if (project_owner && project_number) {
+      try {
+        const issueUrl = await this.execGh(`issue view ${issueNumber} --json url --jq .url`);
+        const addOutput = await this.execGh(
+          `project item-add ${project_number} --owner ${project_owner} --url ${issueUrl} --format=json`
+        );
+        let itemId: string | undefined;
+        try {
+          const parsed = JSON.parse(addOutput);
+          itemId = parsed.id || parsed.item?.id;
+        } catch {
+          // ignore parse errors; fall back silently
+        }
+        if (itemId) {
+          await this.setProjectStatus({
+            owner: project_owner,
+            number: project_number,
+            itemId,
+            fieldName: projectCfg.status_field || 'Status',
+            optionName: projectCfg.status_backlog || 'Backlog',
+          });
+        }
+        return;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `Unable to add issue #${issueNumber} to project ${project_number}: ${String(error)}`
+        );
+        return;
+      }
+    }
+
+    // Fallback: classic project by name (best effort).
+    if (project_name) {
+      try {
+        await this.execGh(`project item-add "${project_name}" --issue ${issueNumber}`);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `Unable to add issue #${issueNumber} to project ${project_name}: ${String(error)}`
+        );
+      }
     }
   }
 
@@ -104,5 +156,64 @@ export class GhClient {
     const filePath = path.join(dir, 'issue-body.md');
     fs.writeFileSync(filePath, body, 'utf8');
     return filePath;
+  }
+
+  private async setProjectStatus(args: {
+    owner: string;
+    number: number;
+    itemId: string;
+    fieldName: string;
+    optionName: string;
+  }): Promise<void> {
+    try {
+      const meta = await this.getProjectField(args.owner, args.number, args.fieldName);
+      if (!meta?.projectId || !meta.fieldId || !meta.options || !Object.keys(meta.options).length) {
+        return;
+      }
+      const optionId =
+        meta.options[args.optionName] ||
+        meta.options['Todo'] ||
+        meta.options['Backlog'] ||
+        Object.values(meta.options)[0];
+      if (!optionId) return;
+
+      const mutation =
+        'mutation($project:ID!,$item:ID!,$field:ID!,$option:String!){updateProjectV2ItemFieldValue(input:{projectId:$project,itemId:$item,fieldId:$field,value:{singleSelectOptionId:$option}}){projectV2Item{id}}}';
+      await this.execGh(
+        `api graphql -f query='${mutation}' -f project=${meta.projectId} -f item=${args.itemId} -f field=${meta.fieldId} -f option=${optionId}`
+      );
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn(`Unable to set project status: ${String(error)}`);
+    }
+  }
+
+  private async getProjectField(
+    owner: string,
+    number: number,
+    fieldName: string
+  ): Promise<{ projectId: string; fieldId?: string; options?: Record<string, string> }> {
+    const cacheKey = `${owner}#${number}#${fieldName}`;
+    if (this.projectCache[cacheKey]) return this.projectCache[cacheKey];
+
+    const raw = await this.execGh(
+      `api graphql -f query='query($owner:String!,$number:Int!){user(login:$owner){projectV2(number:$number){id fields(first:50){nodes{... on ProjectV2SingleSelectField{id name options{id name}}}}}}}' -f owner=${owner} -F number=${number}`
+    );
+
+    const parsed = JSON.parse(raw);
+    const project = parsed?.data?.user?.projectV2;
+    const nodes = project?.fields?.nodes || [];
+    const field = nodes.find((n: any) => n?.name === fieldName);
+    const options = field?.options?.reduce((acc: Record<string, string>, opt: any) => {
+      acc[opt.name] = opt.id;
+      return acc;
+    }, {});
+    const result = {
+      projectId: project?.id,
+      fieldId: field?.id,
+      options,
+    };
+    this.projectCache[cacheKey] = result;
+    return result;
   }
 }

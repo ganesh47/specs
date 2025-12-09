@@ -32,8 +32,8 @@ export function registerSync(program: Command) {
           const issueNumber = await gh.upsertIssue(spec, labels);
           // eslint-disable-next-line no-console
           console.log(`Synced spec ${spec.specId} -> issue #${issueNumber || '?'} `);
-          if (config.github?.project_name && issueNumber) {
-            await gh.addToProject(config.github.project_name, issueNumber);
+          if (issueNumber) {
+            await gh.addToProject(config.github || {}, issueNumber);
           }
         } catch (error) {
           // eslint-disable-next-line no-console
