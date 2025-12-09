@@ -6,6 +6,7 @@ import { registerSync } from './commands/sync';
 import { registerNext } from './commands/next';
 import { registerCoverage } from './commands/coverage';
 import { registerTemplates } from './commands/templates';
+import { registerClose } from './commands/close';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../package.json');
 
@@ -22,5 +23,6 @@ registerSync(program);
 registerNext(program);
 registerCoverage(program);
 registerTemplates(program);
+registerClose(program);
 
 program.parse(process.argv);

@@ -33,7 +33,7 @@ export function registerSync(program: Command) {
           // eslint-disable-next-line no-console
           console.log(`Synced spec ${spec.specId} -> issue #${issueNumber || '?'} `);
           if (issueNumber) {
-            await gh.addToProject(config.github || {}, issueNumber);
+            await gh.addToProject(config.github || {}, issueNumber, { stage: 'in_progress' });
           }
         } catch (error) {
           // eslint-disable-next-line no-console

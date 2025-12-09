@@ -13,6 +13,8 @@ type ProjectConfig = {
   project_number?: number;
   status_field?: string;
   status_backlog?: string;
+  status_in_progress?: string;
+  status_done?: string;
 };
 
 export class GhClient {
@@ -67,8 +69,13 @@ export class GhClient {
     return match ? Number(match[1]) : 0;
   }
 
-  async addToProject(projectCfg: ProjectConfig, issueNumber: number): Promise<void> {
+  async addToProject(
+    projectCfg: ProjectConfig,
+    issueNumber: number,
+    opts: { stage?: 'backlog' | 'in_progress' | 'done' } = {}
+  ): Promise<void> {
     const { project_owner, project_number, project_name } = projectCfg;
+    const stage = opts.stage || 'backlog';
 
     // Prefer Projects (v2) via owner + number if available.
     if (project_owner && project_number) {
@@ -85,12 +92,18 @@ export class GhClient {
           // ignore parse errors; fall back silently
         }
         if (itemId) {
+          const optionName =
+            stage === 'in_progress'
+              ? projectCfg.status_in_progress || 'In Progress'
+              : stage === 'done'
+              ? projectCfg.status_done || 'Done'
+              : projectCfg.status_backlog || 'Backlog';
           await this.setProjectStatus({
             owner: project_owner,
             number: project_number,
             itemId,
             fieldName: projectCfg.status_field || 'Status',
-            optionName: projectCfg.status_backlog || 'Backlog',
+            optionName,
           });
         }
         return;
@@ -124,6 +137,10 @@ export class GhClient {
     await this.execGh(`pr comment ${pr} --body "${body}"`);
   }
 
+  async closeIssue(issueNumber: number): Promise<void> {
+    await this.execGh(`issue close ${issueNumber}`);
+  }
+
   private async searchIssues(query: string): Promise<{ number: number; title: string }[]> {
     const raw = await this.execGh(`issue list --search "${query}" --json number,title --limit 1`);
     try {
@@ -133,7 +150,7 @@ export class GhClient {
     }
   }
 
-  private async searchIssuesByTitle(title: string): Promise<{ number: number; title: string }[]> {
+  async searchIssuesByTitle(title: string): Promise<{ number: number; title: string }[]> {
     const raw = await this.execGh(
       `issue list --state all --search "\\"${title}\\" in:title" --json number,title --limit 1`
     );

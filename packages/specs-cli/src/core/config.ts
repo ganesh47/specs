@@ -13,6 +13,8 @@ export interface SpecsConfig {
     project_number?: number;
     status_field?: string;
     status_backlog?: string;
+    status_in_progress?: string;
+    status_done?: string;
     issue_labels?: string[];
   };
   codex?: {
@@ -31,6 +33,8 @@ const defaultConfig: SpecsConfig = {
     project_number: undefined,
     status_field: 'Status',
     status_backlog: 'Backlog',
+    status_in_progress: 'In Progress',
+    status_done: 'Done',
     issue_labels: ['spec'],
   },
   codex: {
