@@ -9,6 +9,9 @@ Key steps:
 - Install the specs CLI (`npm install -g specs`)
 - Run `specs coverage`
 
+## Auto-review/merge workflow
+`pr-auto-merge.yml` auto-approves and merges PRs when checks are green (uses `gh pr view/review/merge`). It requires repository-owned branches and permissions `pull-requests: write`, `contents: write`.
+
 ## Using the packaged action
 Instead of a raw command, you can use the action in `packages/specs-coverage-action`:
 

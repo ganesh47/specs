@@ -1,0 +1,39 @@
+name: specs auto-review-merge
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  auto-merge:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure PR checks are green
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          pending_or_failing=$(gh pr view "$PR" --json statusCheckRollup --jq '
+            .statusCheckRollup // [] | map(select(.conclusion != "SUCCESS" and .conclusion != "NEUTRAL")) | length
+          ')
+          if [ "${pending_or_failing:-0}" != "0" ]; then
+            echo "PR #$PR has pending/failing checks."
+            exit 1
+          fi
+      - name: Approve PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr review "$PR" --approve --body "Auto-approval: specs automation (CI green)."
+      - name: Merge PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR" --merge --auto

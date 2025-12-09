@@ -14,5 +14,8 @@ specs scan
 specs next
 ```
 
+## Conformance
+This repo is validated by the root workflow `example-conformance` that runs `npm run example:conform` to ensure specs stay in sync.
+
 ## CI example
 See `.github/workflows/spec-coverage.yml` for a minimal workflow that runs `specs coverage`.
