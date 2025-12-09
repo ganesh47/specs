@@ -29,10 +29,14 @@ export class GhClient {
   }
 
   async upsertIssue(spec: SpecDoc, labels: string[] = []): Promise<number> {
-    const search = await this.searchIssues(`spec_id:${spec.specId}`);
     const title = spec.title ? `Spec: ${spec.title}` : `Spec: ${spec.specId}`;
     const body = this.formatIssueBody(spec);
     const bodyFile = this.createBodyFile(body);
+
+    // Prefer to find by title (stable) and fall back to body search using spec_id.
+    const foundByTitle = await this.searchIssuesByTitle(title);
+    const search = foundByTitle.length ? foundByTitle : await this.searchIssues(`spec_id:${spec.specId}`);
+
     if (search.length > 0) {
       const issueNumber = search[0].number;
       const labelArg = labels.length ? ` --add-label "${labels.join(',')}"` : '';
@@ -41,6 +45,7 @@ export class GhClient {
       );
       return issueNumber;
     }
+
     const labelArg = labels.length ? ` --label "${labels.join(',')}"` : '';
     const output = await this.execGh(
       `issue create --title "${title}" --body-file "${bodyFile}"${labelArg}`
@@ -69,6 +74,17 @@ export class GhClient {
 
   private async searchIssues(query: string): Promise<{ number: number; title: string }[]> {
     const raw = await this.execGh(`issue list --search "${query}" --json number,title --limit 1`);
+    try {
+      return JSON.parse(raw) as { number: number; title: string }[];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  private async searchIssuesByTitle(title: string): Promise<{ number: number; title: string }[]> {
+    const raw = await this.execGh(
+      `issue list --state all --search "\\"${title}\\" in:title" --json number,title --limit 1`
+    );
     try {
       return JSON.parse(raw) as { number: number; title: string }[];
     } catch (error) {
