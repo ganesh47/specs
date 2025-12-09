@@ -22,6 +22,12 @@ features:
     accept:
       - "Docs clearly state spec-kit as upstream source of prompts/templates and describe how specs extends it with GH/Codex glue"
       - "README/getting-started link to spec-kit docs for prompt semantics"
+  - id: specs.workflow-tracking
+    accept:
+      - "Specs workflow is trackable via GH issues + project lanes (Todo/In Progress/Done) with spec_id labels"
+      - "Per-spec PR lifecycle enforced: branch -> PR -> green checks -> auto-review/merge -> closure"
+      - "Codex context files include current status and links to PR/issue for traceability"
+      - "History/versioning of spec evolution captured via commits and PRs referencing the spec issue"
 ---
 
 ## Summary
