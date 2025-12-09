@@ -25,11 +25,11 @@ codex spec-coverage
 codex approve 15
 ```
 
-## Enable commit/PR discipline hooks
+## Git hooks for discipline
+`specs init` installs Git hooks by default to enforce issue references in commit messages and require an open PR with green checks before pushing. If you need to reconfigure manually:
 ```bash
-npm run setup-hooks
+git config core.hooksPath .githooks
 ```
-This configures Git hooks that enforce issue references in commit messages and require an open PR with green checks before pushing.
 
 ## Authenticate GitHub CLI
 All GitHub actions rely on `gh`:

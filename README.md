@@ -34,7 +34,8 @@ Place executable scripts in `.codex/commands/` (provided in this repo) so Codex 
 ```bash
 npm install
 npm run build --workspaces
-npm run setup-hooks   # configure git hooks for issue/PR discipline
+# specs init now installs git hooks by default. If you need to reapply:
+# git config core.hooksPath .githooks
 ```
 
 ## License

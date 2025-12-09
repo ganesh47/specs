@@ -24,6 +24,7 @@ export function registerInit(program: Command) {
     .description('Create base .specs.yml and example spec files')
     .option('--with-codex-wrappers', 'Generate .codex wrapper commands', false)
     .option('--with-workflow', 'Generate spec-coverage workflow', false)
+    .option('--no-hooks', 'Do not install git hooks for commit/PR discipline', false)
     .action((options) => {
       const cwd = process.cwd();
       const configPath = path.join(cwd, '.specs.yml');
@@ -35,6 +36,71 @@ export function registerInit(program: Command) {
 
       writeFileIfMissing(configPath, configContent);
       writeFileIfMissing(exampleSpecPath, specContent);
+
+      if (options.hooks !== false) {
+        const hooksDir = path.join(cwd, '.githooks');
+        fs.ensureDirSync(hooksDir);
+        const commitMsgHook = [
+          '#!/usr/bin/env bash',
+          'set -euo pipefail',
+          'MSG_FILE=\"$1\"',
+          'MSG_CONTENT=$(cat \"$MSG_FILE\")',
+          'if echo \"$MSG_CONTENT\" | grep -qE \"#[0-9]+\"; then',
+          '  exit 0',
+          'fi',
+          'cat <<\"MSG\"',
+          'Commit message must reference an issue number for the active spec (e.g. \"feat: add hooks (#123)\" or \"Fix: adjust sync #123\").',
+          'MSG',
+          'exit 1',
+          '',
+        ].join('\\n');
+
+        const prePushHook = [
+          '#!/usr/bin/env bash',
+          'set -euo pipefail',
+          '',
+          'if ! command -v gh >/dev/null 2>&1; then',
+          '  echo \"GitHub CLI (gh) is required to run pre-push checks.\"',
+          '  exit 1',
+          'fi',
+          '',
+          'if ! gh auth status -t >/dev/null 2>&1; then',
+          '  echo \"GitHub CLI is not authenticated. Run \\\"gh auth login\\\".\"',
+          '  exit 1',
+          'fi',
+          '',
+          'BRANCH=$(git rev-parse --abbrev-ref HEAD)',
+          "PR_NUMBER=$(gh pr list --head \"$BRANCH\" --state open --json number --jq '[0].number' 2>/dev/null || true)",
+          '',
+          'if [ -z \"$PR_NUMBER\" ]; then',
+          '  echo \"No open PR for branch \\\"$BRANCH\\\". Create a per-spec PR before pushing.\"',
+          '  exit 1',
+          'fi',
+          '',
+          'PENDING_OR_FAILING=$(gh pr view \"$PR_NUMBER\" --json statusCheckRollup --jq \"[.statusCheckRollup[]? | select(.conclusion != \\\"SUCCESS\\\" and .conclusion != \\\"NEUTRAL\\\")] | length\" 2>/dev/null || echo \"0\")',
+          'if [ \"${PENDING_OR_FAILING:-0}\" != \"0\" ]; then',
+          '  echo \"PR #$PR_NUMBER has failing or pending checks. Resolve before pushing.\"',
+          '  exit 1',
+          'fi',
+          '',
+          'exit 0',
+          '',
+        ].join('\\n');
+
+        writeFileIfMissing(path.join(hooksDir, 'commit-msg'), commitMsgHook);
+        writeFileIfMissing(path.join(hooksDir, 'pre-push'), prePushHook);
+        fs.chmodSync(path.join(hooksDir, 'commit-msg'), 0o755);
+        fs.chmodSync(path.join(hooksDir, 'pre-push'), 0o755);
+        try {
+          // Configure hooks path; best-effort.
+          require('child_process').execSync('git config core.hooksPath .githooks', { cwd });
+          // eslint-disable-next-line no-console
+          console.log('Configured git hooks path to .githooks');
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.warn('Unable to configure git hooks path automatically. Run: git config core.hooksPath .githooks');
+        }
+      }
 
       if (options.withCodexWrappers) {
         const wrappersDir = path.join(cwd, '.codex', 'commands');
