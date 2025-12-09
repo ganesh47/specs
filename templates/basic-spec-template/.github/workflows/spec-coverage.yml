@@ -18,5 +18,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - run: npm install -g specs
-      - run: specs coverage
+      - name: Install dependencies
+        run: npm ci
+      - name: Build workspaces
+        run: npm run build --workspaces
+      - name: Install specs CLI from workspace
+        run: npm install -g ./packages/specs-cli
+      - name: Run coverage
+        run: specs coverage
