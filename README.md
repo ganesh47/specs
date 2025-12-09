@@ -29,6 +29,7 @@ Place executable scripts in `.codex/commands/` (provided in this repo) so Codex 
 - `templates/`: starter `.specs.yml`, spec example, and workflow
 - `docs/`: guides and reference
 - `.codex/commands/`: Codex wrapper scripts
+- `examples/sample-app`: example project showing specs usage and coverage workflow
 
 ## Install locally (repo)
 ```bash
@@ -37,6 +38,10 @@ npm run build --workspaces
 # specs init now installs git hooks by default. If you need to reapply:
 # git config core.hooksPath .githooks
 ```
+
+## Example project conformance
+- A sample app lives in `examples/sample-app` with its own `.specs.yml`, sample spec, and coverage workflow example.
+- CI workflow `.github/workflows/example-conformance.yml` runs `npm run example:conform` to ensure the example stays in sync with specs.
 
 ## License
 MIT

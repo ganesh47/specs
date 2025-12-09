@@ -10,7 +10,8 @@
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces || true",
     "test": "npm run test --workspaces || true",
-    "setup-hooks": "git config core.hooksPath .githooks"
+    "setup-hooks": "git config core.hooksPath .githooks",
+    "example:conform": "cd examples/sample-app && npx specs scan"
   },
   "license": "MIT"
 }

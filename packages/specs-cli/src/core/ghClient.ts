@@ -61,10 +61,10 @@ export class GhClient {
 
     const labelArg = labels.length ? ` --label "${labels.join(',')}"` : '';
     const output = await this.execGh(
-      `issue create --title "${title}" --body-file "${bodyFile}"${labelArg} --json number --jq .number`
+      `issue create --title "${title}" --body-file "${bodyFile}"${labelArg}`
     );
-    const parsed = Number(output);
-    return Number.isFinite(parsed) ? parsed : 0;
+    const match = output.match(/#(\\d+)/);
+    return match ? Number(match[1]) : 0;
   }
 
   async addToProject(projectCfg: ProjectConfig, issueNumber: number): Promise<void> {

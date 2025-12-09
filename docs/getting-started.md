@@ -25,6 +25,9 @@ codex spec-coverage
 codex approve 15
 ```
 
+## Example project
+An example lives in `examples/sample-app` with its own `.specs.yml`, sample spec, and a coverage workflow. CI runs `npm run example:conform` to keep the example aligned.
+
 ## Git hooks for discipline
 `specs init` installs Git hooks by default to enforce issue references in commit messages and require an open PR with green checks before pushing. If you need to reconfigure manually:
 ```bash

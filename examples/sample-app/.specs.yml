@@ -1,0 +1,14 @@
+specs:
+  paths:
+    - "specs/**/*.md"
+  format: "markdown+yaml"
+
+github:
+  project_name: "Specs Board"
+  issue_labels:
+    - "spec"
+    - "feature"
+
+codex:
+  context_paths:
+    - "src"
