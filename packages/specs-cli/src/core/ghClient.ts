@@ -1,4 +1,7 @@
 import { exec as cpExec } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { promisify } from 'util';
 import { SpecDoc } from './specParser';
 
@@ -29,14 +32,19 @@ export class GhClient {
     const search = await this.searchIssues(`spec_id:${spec.specId}`);
     const title = spec.title ? `Spec: ${spec.title}` : `Spec: ${spec.specId}`;
     const body = this.formatIssueBody(spec);
+    const bodyFile = this.createBodyFile(body);
     if (search.length > 0) {
       const issueNumber = search[0].number;
       const labelArg = labels.length ? ` --add-label "${labels.join(',')}"` : '';
-      await this.execGh(`issue edit ${issueNumber} --title "${title}" --body "${body}"${labelArg}`);
+      await this.execGh(
+        `issue edit ${issueNumber} --title "${title}" --body-file "${bodyFile}"${labelArg}`
+      );
       return issueNumber;
     }
     const labelArg = labels.length ? ` --label "${labels.join(',')}"` : '';
-    const output = await this.execGh(`issue create --title "${title}" --body "${body}"${labelArg}`);
+    const output = await this.execGh(
+      `issue create --title "${title}" --body-file "${bodyFile}"${labelArg}`
+    );
     const match = output.match(/#(\d+)/);
     return match ? Number(match[1]) : 0;
   }
@@ -71,7 +79,14 @@ export class GhClient {
   private formatIssueBody(spec: SpecDoc): string {
     const featureList = spec.features
       .map((f) => `- [ ] ${f.id}${f.accept && f.accept.length ? ` (accept: ${f.accept.join('; ')})` : ''}`)
-      .join('\\n');
-    return `Spec ID: ${spec.specId}\\nFile: ${spec.filePath}\\n\\nFeatures:\\n${featureList}`;
+      .join('\n');
+    return `Spec ID: ${spec.specId}\nFile: ${spec.filePath}\n\nFeatures:\n${featureList}\n`;
+  }
+
+  private createBodyFile(body: string): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'specs-'));
+    const filePath = path.join(dir, 'issue-body.md');
+    fs.writeFileSync(filePath, body, 'utf8');
+    return filePath;
   }
 }
