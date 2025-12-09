@@ -5,6 +5,7 @@ import { registerScan } from './commands/scan';
 import { registerSync } from './commands/sync';
 import { registerNext } from './commands/next';
 import { registerCoverage } from './commands/coverage';
+import { registerTemplates } from './commands/templates';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require('../package.json');
 
@@ -20,5 +21,6 @@ registerScan(program);
 registerSync(program);
 registerNext(program);
 registerCoverage(program);
+registerTemplates(program);
 
 program.parse(process.argv);
