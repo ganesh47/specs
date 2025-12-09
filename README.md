@@ -45,3 +45,8 @@ npm run build --workspaces
 
 ## License
 MIT
+
+## Spec-kit integration
+- Specs can reuse upstream prompt templates from `github/spec-kit`. Use `specs templates` or `specs scan --refresh-spec-kit` to pull prompts locally into `.specs/spec-kit`.
+- CI includes `npm run spec-kit:check` to verify spec-kit templates are reachable.
+- Codex wrappers continue to work; specs provides GH issues/project automation while spec-kit remains the canonical prompt source.

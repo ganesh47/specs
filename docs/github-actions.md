@@ -23,3 +23,10 @@ Instead of a raw command, you can use the action in `packages/specs-coverage-act
 
 ## GitHub permissions
 Grant pull request write permissions if posting comments. The sample workflow sets `pull-requests: write` and `contents: read`.
+
+## Spec-kit availability check
+`spec-kit:check` script verifies spec-kit prompts are reachable (defaults to github/spec-kit@main). Add a workflow step:
+```yaml
+- run: npm run spec-kit:check
+```
+Use env vars `SPEC_KIT_REPO` and `SPEC_KIT_REF` to override.

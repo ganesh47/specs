@@ -39,3 +39,12 @@ All GitHub actions rely on `gh`:
 ```bash
 gh auth login
 ```
+
+## Using spec-kit templates
+Specs builds on spec-kit prompts. To refresh templates locally:
+```bash
+specs templates
+# or
+specs scan --refresh-spec-kit
+```
+Templates land in `.specs/spec-kit`. CI runs `npm run spec-kit:check` to ensure upstream templates are reachable.

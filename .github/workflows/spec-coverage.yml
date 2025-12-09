@@ -28,3 +28,5 @@ jobs:
         run: specs coverage
       - name: (Alternative) use local action
         uses: ./packages/specs-coverage-action
+      - name: spec-kit availability
+        run: npm run spec-kit:check
