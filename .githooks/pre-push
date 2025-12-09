@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v gh >/dev/null 2>&1; then
+  echo "GitHub CLI (gh) is required to run pre-push checks."
+  exit 1
+fi
+
+if ! gh auth status -t >/dev/null 2>&1; then
+  echo "GitHub CLI is not authenticated. Run 'gh auth login'."
+  exit 1
+fi
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+PR_NUMBER=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null || true)
+
+if [ -z "$PR_NUMBER" ]; then
+  echo "No open PR for branch '$BRANCH'. Create a per-spec PR before pushing."
+  exit 1
+fi
+
+PENDING_OR_FAILING=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '[.statusCheckRollup[]? | select(.conclusion != "SUCCESS" and .conclusion != "NEUTRAL")] | length' 2>/dev/null || echo "0")
+if [ "${PENDING_OR_FAILING:-0}" != "0" ]; then
+  echo "PR #$PR_NUMBER has failing or pending checks. Resolve before pushing."
+  exit 1
+fi
+
+exit 0

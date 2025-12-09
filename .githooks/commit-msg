@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+MSG_FILE="$1"
+MSG_CONTENT=$(cat "$MSG_FILE")
+if echo "$MSG_CONTENT" | grep -qE '#[0-9]+'; then
+  exit 0
+fi
+cat <<'MSG'
+Commit message must reference an issue number for the active spec (e.g. "feat: add hooks (#123)" or "Fix: adjust sync #123").
+MSG
+exit 1

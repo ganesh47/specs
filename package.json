@@ -9,7 +9,8 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces || true",
-    "test": "npm run test --workspaces || true"
+    "test": "npm run test --workspaces || true",
+    "setup-hooks": "git config core.hooksPath .githooks"
   },
   "license": "MIT"
 }

@@ -34,6 +34,7 @@ Place executable scripts in `.codex/commands/` (provided in this repo) so Codex 
 ```bash
 npm install
 npm run build --workspaces
+npm run setup-hooks   # configure git hooks for issue/PR discipline
 ```
 
 ## License
