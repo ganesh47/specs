@@ -33,6 +33,13 @@ features:
 ## Summary
 Elevate specs by building on spec-kit instead of duplicating it: reuse spec-kit prompt templates for specification, planning, and tasking; wire Codex wrappers and GitHub automation around them; enforce PR/commit discipline and CI conformance that validates both specs coverage and spec-kit template availability.
 
+## Conformity checklist
+- Spec-kit templates fetched and available (`specs templates` or CI `spec-kit:check`)
+- Issues on Specs Board set to In Progress when work starts; Done when `specs close` runs
+- PR for the spec merged with all checks green (coverage, conformance, spec-kit check)
+- Spec issue closed via `specs close --pr <number>` to ensure status update + Done lane
+- Docs mention spec-kit as upstream prompt source and workflow expectations
+
 ## Notes
 - Integration should remain git/GitHub-native: GH issues, GH Projects, GH Actions for automation; no external services.
 - Keep spec-kit as the canonical prompt source; specs provides orchestration (wrappers, CI, GH sync, discipline hooks).

@@ -141,6 +141,35 @@ export class GhClient {
     await this.execGh(`issue close ${issueNumber}`);
   }
 
+  async getPrStatus(pr: string | number): Promise<{
+    state: string;
+    checksPendingOrFailing: number;
+    merged: boolean;
+  }> {
+    const raw = await this.execGh(
+      `pr view ${pr} --json state,mergeStateStatus,statusCheckRollup --jq '{state:.state, merge:.mergeStateStatus, checks: (.statusCheckRollup // [])}'`
+    );
+    let parsed: any = {};
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = {};
+    }
+    const checks = Array.isArray(parsed.checks) ? parsed.checks : [];
+    const pendingOrFailing = checks.filter(
+      (c: any) => c?.conclusion !== 'SUCCESS' && c?.conclusion !== 'NEUTRAL'
+    ).length;
+    return {
+      state: parsed.state || 'UNKNOWN',
+      checksPendingOrFailing: pendingOrFailing,
+      merged: parsed.state === 'MERGED',
+    };
+  }
+
+  async mergePr(pr: string | number): Promise<void> {
+    await this.execGh(`pr merge ${pr} --merge`);
+  }
+
   private async searchIssues(query: string): Promise<{ number: number; title: string }[]> {
     const raw = await this.execGh(`issue list --search "${query}" --json number,title --limit 1`);
     try {

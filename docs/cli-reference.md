@@ -48,4 +48,5 @@ Close a spec issue and mark the project item Done. Supply `spec_id` or `--issue`
 ```
 specs close specs.spec-kit-integration
 specs close --issue 7
+specs close specs.spec-kit-integration --pr 8   # validates/merges PR before closing
 ```

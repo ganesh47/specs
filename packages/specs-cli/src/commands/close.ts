@@ -9,6 +9,7 @@ export function registerClose(program: Command) {
     .description('Close a spec issue and mark it Done in the project')
     .argument('<specId>', 'Spec ID to close (matches spec_id)')
     .option('-n, --issue <number>', 'Issue number override')
+    .option('-p, --pr <number>', 'Pull request number to validate/merge before closing')
     .action(async (specId: string, options) => {
       const config = loadConfig();
       const specs = await loadSpecs(config);
@@ -36,6 +37,27 @@ export function registerClose(program: Command) {
         // eslint-disable-next-line no-console
         console.error('Unable to determine issue number for closing. Provide --issue.');
         process.exit(1);
+      }
+
+      if (options.pr) {
+        const prNumber = Number(options.pr);
+        try {
+          const status = await gh.getPrStatus(prNumber);
+          if (status.checksPendingOrFailing > 0) {
+            // eslint-disable-next-line no-console
+            console.error(`PR #${prNumber} has pending/failing checks. Aborting close.`);
+            process.exit(1);
+          }
+          if (!status.merged) {
+            // eslint-disable-next-line no-console
+            console.log(`Merging PR #${prNumber} before closing spec...`);
+            await gh.mergePr(prNumber);
+          }
+        } catch (error: any) {
+          // eslint-disable-next-line no-console
+          console.error(`Failed to validate/merge PR #${options.pr}: ${error?.message || error}`);
+          process.exit(1);
+        }
       }
 
       try {
