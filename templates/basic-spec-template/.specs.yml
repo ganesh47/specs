@@ -1,0 +1,15 @@
+specs:
+  paths:
+    - "specs/**/*.md"
+  format: "markdown+yaml"
+
+github:
+  project_name: "Spec Funnel"
+  issue_labels:
+    - "spec"
+    - "feature"
+
+codex:
+  context_paths:
+    - "src"
+    - "tests"

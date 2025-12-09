@@ -1,0 +1,10 @@
+node_modules
+*.log
+dist
+!packages/specs-coverage-action/dist/index.js
+tmp
+.DS_Store
+coverage
+lib
+.nyc_output
+specs-coverage-report.json

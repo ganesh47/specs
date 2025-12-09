@@ -1,0 +1,24 @@
+name: specs coverage
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install specs CLI
+        run: npm install -g specs
+      - name: Run coverage
+        run: specs coverage
+      - name: (Alternative) use local action
+        uses: ./packages/specs-coverage-action

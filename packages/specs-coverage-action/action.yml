@@ -1,0 +1,12 @@
+name: 'specs coverage'
+description: 'Run specs coverage inside CI'
+inputs:
+  pr:
+    description: 'Pull request number (optional)'
+    required: false
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+branding:
+  color: 'blue'
+  icon: 'check-circle'

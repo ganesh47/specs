@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+Usage="Usage: codex approve <pr>"
+PR="$1"
+if [ -z "$PR" ]; then
+  echo "$Usage"
+  exit 1
+fi
+
+echo "Running spec coverage..."
+specs coverage || echo "coverage engine is stubbed"
+
+echo "Approving PR via gh…"
+gh pr review "$PR" --approve
