@@ -4,15 +4,15 @@ The diagram below traces the current end-to-end workflow implemented by the comp
 
 ```mermaid
 flowchart TD
-    A[Spec created or selected\n(specs.sync/specs.next)] --> B[Issue on Specs Board\nStatus: Todo]
-    B --> C[ADR/Design discussion opened\nand approved]
-    C --> D[Branch + PR per spec\n(commit messages reference issue)]
-    D --> E[Codex wrappers use spec-kit templates\nfor planning and tasks]
-    E --> F[CI runs coverage + example conformance\n+ spec-kit availability check]
-    F --> G[Security scans: Semgrep, OSV-Scanner,\nGitleaks, Checkov]
-    G --> H[PR checks green\n(Status: In Progress)]
-    H --> I[Release workflow (tag + GitHub Release)\nchangelog/wiki/discussion updated]
-    I --> J[specs close --pr <n>\nIssue closed, Specs Board → Done]
+    A[Spec created or selected<br/>(specs.sync/specs.next)] --> B[Issue on Specs Board<br/>Status: Todo]
+    B --> C[ADR/Design discussion opened<br/>and approved]
+    C --> D[Branch + PR per spec<br/>(commit messages reference issue)]
+    D --> E[Codex wrappers use spec-kit templates<br/>for planning and tasks]
+    E --> F[CI runs coverage + example conformance<br/>+ spec-kit availability check]
+    F --> G[Security scans: Semgrep, OSV-Scanner,<br/>Gitleaks, Checkov]
+    G --> H[PR checks green<br/>(Status: In Progress)]
+    H --> I[Release workflow (tag + GitHub Release)<br/>changelog/wiki/discussion updated]
+    I --> J[specs close --pr <n><br/>Issue closed, Specs Board → Done]
 ```
 
 ## How the workflow is enabled
