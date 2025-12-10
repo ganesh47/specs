@@ -19,6 +19,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ADR_DISCUSSION: https://github.com/ganesh47/specs/discussions/16
@@ -43,8 +44,9 @@ jobs:
       - name: Ensure changelog contains version entry
         run: |
           TAG="${{ steps.prep.outputs.tag }}"
-          if ! grep -q "## ${TAG}" CHANGELOG.md; then
-            echo "CHANGELOG.md missing entry for ${TAG}. Please add it before running release."
+          VERSION="${{ steps.prep.outputs.version }}"
+          if ! grep -qE "## (v?${VERSION}|${TAG})" CHANGELOG.md; then
+            echo "CHANGELOG.md missing entry for ${TAG} (accepts headings like '## ${TAG}' or '## ${VERSION}'). Please add it before running release."
             exit 1
           fi
 
