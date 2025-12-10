@@ -8,3 +8,5 @@ coverage
 lib
 .nyc_output
 specs-coverage-report.json
+.specs/
+.codex/context-*.md

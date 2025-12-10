@@ -30,3 +30,35 @@ jobs:
         uses: ./packages/specs-coverage-action
       - name: spec-kit availability
         run: npm run spec-kit:check
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python deps for Semgrep
+        run: python3 -m pip install --upgrade pip semgrep
+      - name: SAST (Semgrep OSS)
+        run: semgrep --config p/ci --error --metrics=off
+
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      - name: Install OSV-Scanner
+        run: |
+          go install github.com/google/osv-scanner/cmd/osv-scanner@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: SCA (OSV-Scanner)
+        run: osv-scanner -r . --skip-git-ignored
+
+      - name: Secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: --no-banner --redact
+
+      - name: IaC (Checkov)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          quiet: true
