@@ -29,9 +29,9 @@ flowchart TD
   end
 
   subgraph SpecKit[spec-kit]
-    T1[Templates (prompts for specs/plans/tasks)]
+    T1[Templates: prompts for specs, plans, tasks]
     TFetch[specs templates] -->|fetch| TLoc[.specs/spec-kit]
-    C2 -. reference prompts .-> TLoc
+    C2 -.-> TLoc
   end
 
   subgraph GH[GitHub]
@@ -43,10 +43,10 @@ flowchart TD
   SYNC -->|ensure gh auth| GHAUTH{gh auth}
   GHAUTH -->|ok| GH1
   SYNC -->|upsert| GH1
-  SYNC -->|add| GH2[[Project item → In Progress]]
+  SYNC -->|add| GH2[[Project item: In Progress]]
 
   CLOSEX -->|gh close issue| GH1
-  CLOSEX -->|project stage: done| GH2[[Project item → Done]]
+  CLOSEX -->|project stage: done| GH2[[Project item: Done]]
   CLOSEX -->|if --pr N: check/merge| GHPR
 
   %% Codex wrappers
