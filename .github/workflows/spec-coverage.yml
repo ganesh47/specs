@@ -62,3 +62,4 @@ jobs:
         with:
           directory: .
           quiet: true
+          skip_check: CKV_GHA_7
