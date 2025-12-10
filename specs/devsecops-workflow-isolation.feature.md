@@ -11,11 +11,13 @@ features:
       - "Separate GH Actions pipelines for planning/build/release/security tied to spec_id; security scans block merge on failure"
       - "Pipelines run with least-privilege secrets and isolate spec artifacts per spec_id"
       - "Default CI uses OSS scanners (Semgrep SAST, OSV-Scanner SCA, Gitleaks secret scan, Checkov IaC) with configuration hooks to swap/extend tooling per spec consumer"
+      - "Example app workflow includes the same security job (Semgrep/OSV-Scanner/Gitleaks/Checkov) as the root pipeline"
   - id: devsecops.adr-design-review
     accept:
       - "A GitHub Discussion (ADR/design review) is created per spec before implementation and linked to the spec issue"
       - "ADR approval recorded before merge; PR references the ADR/discussion link"
       - "ADR owner defaults to the repo owner (@ganesh47) unless explicitly overridden in the discussion"
+      - "PR merged only after required review/approval recorded in the ADR discussion"
   - id: devsecops.gh-automation
     accept:
       - "`specs sync` creates/updates the spec issue with labels spec/feature and adds it to project 'Specs Board' with Status transitions (Todo/In Progress/Done)"
