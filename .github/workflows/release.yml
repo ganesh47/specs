@@ -132,6 +132,8 @@ jobs:
           tmpdir=$(mktemp -d)
           git clone "https://x-access-token:${GH_TOKEN}@github.com/ganesh47/specs.wiki.git" "$tmpdir/specs.wiki"
           cd "$tmpdir/specs.wiki"
+          git config user.name "specs-bot"
+          git config user.email "specs-bot@users.noreply.github.com"
           cat >> Release-Workflow-Automation.md <<EOF
 
           ## ${TAG}
