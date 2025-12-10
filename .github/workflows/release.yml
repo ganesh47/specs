@@ -18,8 +18,8 @@ permissions:
 
 jobs:
   release:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ADR_DISCUSSION: https://github.com/ganesh47/specs/discussions/16
@@ -134,3 +134,9 @@ EOF
         run: |
           TAG="${{ steps.prep.outputs.tag }}"
           gh issue comment "$SPEC_ISSUE" --body "Released ${TAG}: https://github.com/ganesh47/specs/releases/${TAG}\nChangelog updated, ADR discussion noted, wiki updated: $WIKI_URL"
+
+  release-noop:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.version == ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No version provided; skipping release."
