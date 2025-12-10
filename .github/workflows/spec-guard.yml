@@ -7,6 +7,8 @@ on:
 jobs:
   guard:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Validate spec issue, ADR discussion, wiki link, and ADR approval
         env:
