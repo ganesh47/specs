@@ -50,7 +50,7 @@ jobs:
           go install github.com/google/osv-scanner/cmd/osv-scanner@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: SCA (OSV-Scanner)
-        run: osv-scanner -r . --skip-git-ignored
+        run: osv-scanner -r .
 
       - name: Secrets (Gitleaks)
         uses: gitleaks/gitleaks-action@v2
