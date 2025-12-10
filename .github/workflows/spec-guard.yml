@@ -44,7 +44,10 @@ jobs:
             exit 1
           fi
 
-          adr_comments=$(gh api graphql -f query='query($url:String!){resource(url:$url){... on Discussion{comments(first:50){nodes{bodyText}}}}}' -f url="$adr_url" | jq -r '..|.bodyText? // empty')
+          repo_owner="${GITHUB_REPOSITORY%/*}"
+          repo_name="${GITHUB_REPOSITORY#*/}"
+          adr_number=$(printf "%s" "$adr_url" | sed -E 's#.*/discussions/([0-9]+).*#\1#')
+          adr_comments=$(gh api graphql -f query='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){discussion(number:$number){comments(first:50){nodes{bodyText}}}}}' -f owner="$repo_owner" -f name="$repo_name" -F number="$adr_number" | jq -r '..|.bodyText? // empty')
           if ! printf "%s" "$adr_comments" | grep -iq "approved"; then
             echo "ADR discussion does not contain an approval marker."
             exit 1
