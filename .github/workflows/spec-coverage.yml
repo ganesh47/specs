@@ -53,7 +53,7 @@ jobs:
         run: osv-scanner -r .
 
       - name: Install Gitleaks
-        run: go install github.com/gitleaks/gitleaks/v8@latest
+        run: go install github.com/zricethezav/gitleaks/v8@latest
       - name: Secrets (Gitleaks)
         run: gitleaks detect --no-banner --redact --source .
 
