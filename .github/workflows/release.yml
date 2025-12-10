@@ -108,12 +108,12 @@ jobs:
         run: |
           TAG="${{ steps.prep.outputs.tag }}"
           BODY=$(cat <<'EOF'
-Release {TAG} published.
-- Release: https://github.com/ganesh47/specs/releases/{TAG}
-- Changelog: https://github.com/ganesh47/specs/blob/main/CHANGELOG.md
-- Issue: https://github.com/ganesh47/specs/issues/14
-- Wiki: https://github.com/ganesh47/specs/wiki/Release-Workflow-Automation
-EOF
+          Release {TAG} published.
+          - Release: https://github.com/ganesh47/specs/releases/{TAG}
+          - Changelog: https://github.com/ganesh47/specs/blob/main/CHANGELOG.md
+          - Issue: https://github.com/ganesh47/specs/issues/14
+          - Wiki: https://github.com/ganesh47/specs/wiki/Release-Workflow-Automation
+          EOF
           )
           BODY="${BODY//\{TAG\}/$TAG}"
           gh api graphql -f query='mutation($id:ID!,$body:String!){addDiscussionComment(input:{discussionId:$id,body:$body}){comment{id}}}' -f id=D_kwDOQlQ-as4AjN07 -f body="$BODY"
@@ -126,12 +126,12 @@ EOF
           cd "$tmpdir/specs.wiki"
           cat >> Release-Workflow-Automation.md <<EOF
 
-## ${TAG}
-- Release: https://github.com/ganesh47/specs/releases/${TAG}
-- Changelog: https://github.com/ganesh47/specs/blob/main/CHANGELOG.md
-- ADR: https://github.com/ganesh47/specs/discussions/16
-- Issue: https://github.com/ganesh47/specs/issues/14
-EOF
+          ## ${TAG}
+          - Release: https://github.com/ganesh47/specs/releases/${TAG}
+          - Changelog: https://github.com/ganesh47/specs/blob/main/CHANGELOG.md
+          - ADR: https://github.com/ganesh47/specs/discussions/16
+          - Issue: https://github.com/ganesh47/specs/issues/14
+          EOF
           git add Release-Workflow-Automation.md
           git commit -m "Add release notes for ${TAG}"
           git push origin master
