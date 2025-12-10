@@ -98,7 +98,11 @@ jobs:
         env:
           TAG: ${{ steps.prep.outputs.tag }}
         run: |
-          gh release create "$TAG" --latest --notes-file release-notes.md --target main
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --latest --notes-file release-notes.md
+          else
+            gh release create "$TAG" --latest --notes-file release-notes.md --target main
+          fi
 
       - name: Upload coverage artifact to release
         env:
