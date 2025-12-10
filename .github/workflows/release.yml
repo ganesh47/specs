@@ -1,0 +1,134 @@
+name: specs release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 0.2.0)'
+        required: true
+      notes:
+        description: 'Additional release notes (optional)'
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: read
+  discussions: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ADR_DISCUSSION: https://github.com/ganesh47/specs/discussions/16
+      SPEC_ISSUE: 14
+      WIKI_URL: https://github.com/ganesh47/specs/wiki/Release-Workflow-Automation
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up git identity
+        run: |
+          git config user.name "specs-bot"
+          git config user.email "specs-bot@users.noreply.github.com"
+
+      - name: Prepare variables
+        id: prep
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          TAG="v${VERSION}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure changelog contains version entry
+        run: |
+          TAG="${{ steps.prep.outputs.tag }}"
+          if ! grep -q "## ${TAG}" CHANGELOG.md; then
+            echo "CHANGELOG.md missing entry for ${TAG}. Please add it before running release."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build workspaces
+        run: npm run build --workspaces
+
+      - name: spec-kit availability
+        run: npm run spec-kit:check
+
+      - name: Run coverage for artifacts
+        run: node_modules/.bin/specs coverage
+
+      - name: Extract changelog section
+        id: notes
+        run: |
+          TAG="${{ steps.prep.outputs.tag }}"
+          awk -v tag="## ${TAG}" '
+            $0 ~ tag {flag=1; next}
+            /^## / && flag {flag=0}
+            flag {print}
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "No release notes extracted for ${TAG}. Ensure CHANGELOG.md has a section."
+            exit 1
+          fi
+          if [ -n "${{ github.event.inputs.notes }}" ]; then
+            printf "\n## Additional Notes\n%s\n" "${{ github.event.inputs.notes }}" >> release-notes.md
+          fi
+
+      - name: Create GitHub Release (creates tag if missing)
+        run: |
+          TAG="${{ steps.prep.outputs.tag }}"
+          gh release create "$TAG" --latest --notes-file release-notes.md --target main
+
+      - name: Upload coverage artifact to release
+        run: |
+          TAG="${{ steps.prep.outputs.tag }}"
+          if [ -f .specs/coverage-report.json ]; then
+            gh release upload "$TAG" .specs/coverage-report.json --clobber
+          else
+            echo "No coverage report found to upload."
+          fi
+
+      - name: Comment in ADR discussion
+        run: |
+          TAG="${{ steps.prep.outputs.tag }}"
+          BODY=$(cat <<'EOF'
+Release {TAG} published.
+- Release: https://github.com/ganesh47/specs/releases/{TAG}
+- Changelog: https://github.com/ganesh47/specs/blob/main/CHANGELOG.md
+- Issue: https://github.com/ganesh47/specs/issues/14
+- Wiki: https://github.com/ganesh47/specs/wiki/Release-Workflow-Automation
+EOF
+          )
+          BODY="${BODY//\{TAG\}/$TAG}"
+          gh api graphql -f query='mutation($id:ID!,$body:String!){addDiscussionComment(input:{discussionId:$id,body:$body}){comment{id}}}' -f id=D_kwDOQlQ-as4AjN07 -f body="$BODY"
+
+      - name: Update wiki with release entry
+        run: |
+          TAG="${{ steps.prep.outputs.tag }}"
+          tmpdir=$(mktemp -d)
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/ganesh47/specs.wiki.git" "$tmpdir/specs.wiki"
+          cd "$tmpdir/specs.wiki"
+          cat >> Release-Workflow-Automation.md <<EOF
+
+## ${TAG}
+- Release: https://github.com/ganesh47/specs/releases/${TAG}
+- Changelog: https://github.com/ganesh47/specs/blob/main/CHANGELOG.md
+- ADR: https://github.com/ganesh47/specs/discussions/16
+- Issue: https://github.com/ganesh47/specs/issues/14
+EOF
+          git add Release-Workflow-Automation.md
+          git commit -m "Add release notes for ${TAG}"
+          git push origin master
+
+      - name: Comment on related spec issue
+        run: |
+          TAG="${{ steps.prep.outputs.tag }}"
+          gh issue comment "$SPEC_ISSUE" --body "Released ${TAG}: https://github.com/ganesh47/specs/releases/${TAG}\nChangelog updated, ADR discussion noted, wiki updated: $WIKI_URL"
