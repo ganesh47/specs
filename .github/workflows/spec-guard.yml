@@ -46,4 +46,10 @@ jobs:
             exit 1
           fi
 
+          review_decision=$(gh pr view "$PR_NUMBER" --json reviewDecision --jq .reviewDecision)
+          if [ "${review_decision:-}" = "CHANGES_REQUESTED" ]; then
+            echo "PR has pending changes requested; resolve review comments before sync/merge."
+            exit 1
+          fi
+
           echo "Guard checks passed: issue #$issue open, ADR link present/approved, wiki link present."
