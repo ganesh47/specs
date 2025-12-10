@@ -1,0 +1,49 @@
+name: specs guard (issue/ADR/wiki)
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate spec issue, ADR discussion, wiki link, and ADR approval
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          body=$(gh pr view "$PR_NUMBER" --json body --jq .body)
+
+          issue=$(printf "%s" "$body" | grep -oE "#[0-9]+" | head -n1 | tr -d '#')
+          if [ -z "${issue:-}" ]; then
+            echo "Missing spec issue reference (#123) in PR body."
+            exit 1
+          fi
+
+          adr_url=$(printf "%s" "$body" | grep -oE "https://github.com/.+/discussions/[0-9]+" | head -n1 || true)
+          if [ -z "${adr_url:-}" ]; then
+            echo "Missing ADR discussion URL in PR body."
+            exit 1
+          fi
+
+          wiki_url=$(printf "%s" "$body" | grep -oE "https://github.com/.+/wiki/[^ )\"]+" | head -n1 || true)
+          if [ -z "${wiki_url:-}" ]; then
+            echo "Missing wiki URL in PR body."
+            exit 1
+          fi
+
+          issue_state=$(gh issue view "$issue" --json state --jq .state)
+          if [ "$issue_state" != "OPEN" ]; then
+            echo "Spec issue #$issue is not open (state=$issue_state)."
+            exit 1
+          fi
+
+          adr_comments=$(gh api graphql -f query='query($url:String!){resource(url:$url){... on Discussion{comments(first:50){nodes{bodyText}}}}}' -f url="$adr_url" | jq -r '..|.bodyText? // empty')
+          if ! printf "%s" "$adr_comments" | grep -iq "approved"; then
+            echo "ADR discussion does not contain an approval marker."
+            exit 1
+          fi
+
+          echo "Guard checks passed: issue #$issue open, ADR link present/approved, wiki link present."
