@@ -27,6 +27,8 @@ jobs:
       ADR_DISCUSSION: https://github.com/ganesh47/specs/discussions/16
       SPEC_ISSUE: 14
       WIKI_URL: https://github.com/ganesh47/specs/wiki/Release-Workflow-Automation
+      INPUT_VERSION: ${{ github.event.inputs.version }}
+      INPUT_NOTES: ${{ github.event.inputs.notes }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,7 +40,7 @@ jobs:
       - name: Prepare variables
         id: prep
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="$INPUT_VERSION"
           if [ -z "$VERSION" ]; then
             echo "Release version input is required for workflow_dispatch."
             exit 1
@@ -75,8 +77,10 @@ jobs:
 
       - name: Extract changelog section
         id: notes
+        env:
+          TAG: ${{ steps.prep.outputs.tag }}
+          INPUT_NOTES: ${{ env.INPUT_NOTES }}
         run: |
-          TAG="${{ steps.prep.outputs.tag }}"
           awk -v tag="## ${TAG}" '
             $0 ~ tag {flag=1; next}
             /^## / && flag {flag=0}
@@ -86,18 +90,20 @@ jobs:
             echo "No release notes extracted for ${TAG}. Ensure CHANGELOG.md has a section."
             exit 1
           fi
-          if [ -n "${{ github.event.inputs.notes }}" ]; then
-            printf "\n## Additional Notes\n%s\n" "${{ github.event.inputs.notes }}" >> release-notes.md
+          if [ -n "$INPUT_NOTES" ]; then
+            printf "\n## Additional Notes\n%s\n" "$INPUT_NOTES" >> release-notes.md
           fi
 
       - name: Create GitHub Release (creates tag if missing)
+        env:
+          TAG: ${{ steps.prep.outputs.tag }}
         run: |
-          TAG="${{ steps.prep.outputs.tag }}"
           gh release create "$TAG" --latest --notes-file release-notes.md --target main
 
       - name: Upload coverage artifact to release
+        env:
+          TAG: ${{ steps.prep.outputs.tag }}
         run: |
-          TAG="${{ steps.prep.outputs.tag }}"
           if [ -f .specs/coverage-report.json ]; then
             gh release upload "$TAG" .specs/coverage-report.json --clobber
           else
@@ -105,8 +111,9 @@ jobs:
           fi
 
       - name: Comment in ADR discussion
+        env:
+          TAG: ${{ steps.prep.outputs.tag }}
         run: |
-          TAG="${{ steps.prep.outputs.tag }}"
           BODY=$(cat <<'EOF'
           Release {TAG} published.
           - Release: https://github.com/ganesh47/specs/releases/{TAG}
@@ -119,8 +126,9 @@ jobs:
           gh api graphql -f query='mutation($id:ID!,$body:String!){addDiscussionComment(input:{discussionId:$id,body:$body}){comment{id}}}' -f id=D_kwDOQlQ-as4AjN07 -f body="$BODY"
 
       - name: Update wiki with release entry
+        env:
+          TAG: ${{ steps.prep.outputs.tag }}
         run: |
-          TAG="${{ steps.prep.outputs.tag }}"
           tmpdir=$(mktemp -d)
           git clone "https://x-access-token:${GH_TOKEN}@github.com/ganesh47/specs.wiki.git" "$tmpdir/specs.wiki"
           cd "$tmpdir/specs.wiki"
@@ -137,8 +145,9 @@ jobs:
           git push origin master
 
       - name: Comment on related spec issue
+        env:
+          TAG: ${{ steps.prep.outputs.tag }}
         run: |
-          TAG="${{ steps.prep.outputs.tag }}"
           gh issue comment "$SPEC_ISSUE" --body "Released ${TAG}: https://github.com/ganesh47/specs/releases/${TAG}\nChangelog updated, ADR discussion noted, wiki updated: $WIKI_URL"
 
   release-ignore-other-events:
