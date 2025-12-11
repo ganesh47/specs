@@ -20,6 +20,16 @@ type ProjectConfig = {
 export class GhClient {
   constructor(private cwd: string = process.cwd()) {}
 
+  private phaseOrder = [
+    'Idea/Todo',
+    'ADR/Design Review',
+    'Plan',
+    'Tasks',
+    'Implementation',
+    'Release',
+    'Close',
+  ];
+
   private projectCache: Record<
     string,
     { projectId: string; fieldId?: string; options?: Record<string, string> }
@@ -56,14 +66,19 @@ export class GhClient {
     if (search.length > 0) {
       const issueNumber = search[0].number;
       // Preserve existing completion state from current issue body.
-      let completed = new Set<string>();
+      let completedFeatures = new Set<string>();
+      let completedPhases = new Set<string>();
       try {
         const existingBody = await this.getIssueBody(issueNumber);
-        completed = this.parseCompletedFeatures(existingBody, spec);
+        completedFeatures = this.parseCompletedFeatures(existingBody, spec);
+        completedPhases = this.parseCompletedPhases(existingBody);
       } catch {
-        completed = new Set<string>();
+        completedFeatures = new Set<string>();
+        completedPhases = new Set<string>();
       }
-      const updatedBodyFile = this.createBodyFile(this.buildIssueBody(spec, completed));
+      const updatedBodyFile = this.createBodyFile(
+        this.buildIssueBody(spec, completedFeatures, completedPhases)
+      );
       const labelArg = labels.length ? ` --add-label "${labels.join(',')}"` : '';
       await this.execGh(
         `issue edit ${issueNumber} --title "${title}" --body-file "${updatedBodyFile}"${labelArg}`
@@ -79,16 +94,24 @@ export class GhClient {
     return match ? Number(match[1]) : 0;
   }
 
-  buildIssueBody(spec: SpecDoc, completed: Set<string> = new Set()): string {
+  buildIssueBody(
+    spec: SpecDoc,
+    completedFeatures: Set<string> = new Set(),
+    completedPhases: Set<string> = new Set()
+  ): string {
+    const phaseList = this.phaseOrder
+      .map((p) => `- [${completedPhases.has(p) ? 'x' : ' '}] ${p}`)
+      .join('\n');
+
     const featureList = spec.features
       .map((f) => {
-        const checked = completed.has(f.id) ? 'x' : ' ';
+        const checked = completedFeatures.has(f.id) ? 'x' : ' ';
         const acceptText =
           f.accept && f.accept.length ? ` (accept: ${f.accept.join('; ')})` : '';
         return `- [${checked}] ${f.id}${acceptText}`;
       })
       .join('\n');
-    return `Spec ID: ${spec.specId}\nFile: ${spec.filePath}\n\nFeatures:\n${featureList}\n`;
+    return `Spec ID: ${spec.specId}\nFile: ${spec.filePath}\n\nPhases:\n${phaseList}\n\nFeatures:\n${featureList}\n`;
   }
 
   async addToProject(
@@ -161,6 +184,14 @@ export class GhClient {
 
   async closeIssue(issueNumber: number): Promise<void> {
     await this.execGh(`issue close ${issueNumber}`);
+  }
+
+  async completeAllAndClose(spec: SpecDoc, issueNumber: number): Promise<void> {
+    const allFeatures = new Set(spec.features.map((f) => f.id));
+    const allPhases = new Set(this.phaseOrder);
+    const body = this.buildIssueBody(spec, allFeatures, allPhases);
+    await this.updateIssueBody(issueNumber, body);
+    await this.closeIssue(issueNumber);
   }
 
   async getIssueBody(issueNumber: number): Promise<string> {
@@ -296,6 +327,21 @@ export class GhClient {
       for (const feat of spec.features) {
         if (line.includes(feat.id)) {
           completed.add(feat.id);
+        }
+      }
+    }
+    return completed;
+  }
+
+  private parseCompletedPhases(body: string): Set<string> {
+    const completed = new Set<string>();
+    if (!body) return completed;
+    const lines = body.split(/\r?\n/);
+    for (const line of lines) {
+      if (!line.match(/- \[[xX]\]/)) continue;
+      for (const phase of this.phaseOrder) {
+        if (line.includes(phase)) {
+          completed.add(phase);
         }
       }
     }
