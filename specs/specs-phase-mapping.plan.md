@@ -49,4 +49,4 @@ Structure Decision: No app source changes; focus on docs + automation mapping an
 
 ## Notes
 - Use refreshed spec-kit templates from `.specs/spec-kit/`.
-- Document template versions/commit hash if needed for traceability.
+- Template reference: fetched from `github/spec-kit@main` via `specs scan --refresh-spec-kit` on 2025-12-10 (record source/commit in PR summaries when refreshed).

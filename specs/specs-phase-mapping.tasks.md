@@ -13,7 +13,7 @@
 ## Phase 2: Foundational Mapping
 - [x] T010 [MAP] Author plan doc (`specs/specs-phase-mapping.plan.md`) covering phase-to-template/command mapping, guardrails, CI/release requirements.
 - [x] T011 [MAP] Draft tasks doc (`specs/specs-phase-mapping.tasks.md`) aligned to phase mapping and automation checkpoints.
-- [ ] T012 [MAP] Capture template references/versions used (e.g., spec-kit branch/commit) in plan/tasks or PR summary.
+- [x] T012 [MAP] Capture template references/versions used (e.g., spec-kit branch/commit) in plan/tasks or PR summary.
 
 ## Phase 3: Validation & Publication
 - [x] T020 [MAP] Update ADR #31 with summary of plan/tasks and maintain approval marker.
