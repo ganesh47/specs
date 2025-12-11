@@ -1,6 +1,6 @@
 specs:
   paths:
-    - 'specs/**/*.md'
+    - 'specs/**/*.feature.md'
   format: 'markdown+yaml'
 
 github:
