@@ -11,6 +11,7 @@
     "lint": "npm run lint --workspaces || true",
     "test": "npm run test --workspaces || true",
     "setup-hooks": "git config core.hooksPath .githooks",
+    "prepare": "npm run setup-hooks",
     "example:conform": "cd examples/sample-app && npx specs scan",
     "spec-kit:check": "node scripts/check-spec-kit.js"
   },
