@@ -61,6 +61,11 @@ export function registerClose(program: Command) {
       }
 
       try {
+        if (spec && issueNumber) {
+          // Mark all feature checkboxes complete before closing.
+          const body = gh.buildIssueBody(spec, new Set(spec.features.map((f) => f.id)));
+          await gh.updateIssueBody(issueNumber, body);
+        }
         await gh.closeIssue(issueNumber);
         await gh.addToProject(config.github || {}, issueNumber, { stage: 'done' });
         // eslint-disable-next-line no-console

@@ -45,18 +45,28 @@ export class GhClient {
 
   async upsertIssue(spec: SpecDoc, labels: string[] = []): Promise<number> {
     const title = spec.title ? `Spec: ${spec.title}` : `Spec: ${spec.specId}`;
-    const body = this.formatIssueBody(spec);
-    const bodyFile = this.createBodyFile(body);
+    const bodyFile = this.createBodyFile(this.buildIssueBody(spec));
 
     // Prefer to find by title (stable) and fall back to body search using spec_id.
     const foundByTitle = await this.searchIssuesByTitle(title);
-    const search = foundByTitle.length ? foundByTitle : await this.searchIssues(`spec_id:${spec.specId}`);
+    const search = foundByTitle.length
+      ? foundByTitle
+      : await this.searchIssues(`spec_id:${spec.specId}`);
 
     if (search.length > 0) {
       const issueNumber = search[0].number;
+      // Preserve existing completion state from current issue body.
+      let completed = new Set<string>();
+      try {
+        const existingBody = await this.getIssueBody(issueNumber);
+        completed = this.parseCompletedFeatures(existingBody, spec);
+      } catch {
+        completed = new Set<string>();
+      }
+      const updatedBodyFile = this.createBodyFile(this.buildIssueBody(spec, completed));
       const labelArg = labels.length ? ` --add-label "${labels.join(',')}"` : '';
       await this.execGh(
-        `issue edit ${issueNumber} --title "${title}" --body-file "${bodyFile}"${labelArg}`
+        `issue edit ${issueNumber} --title "${title}" --body-file "${updatedBodyFile}"${labelArg}`
       );
       return issueNumber;
     }
@@ -67,6 +77,18 @@ export class GhClient {
     );
     const match = output.match(/#(\\d+)/);
     return match ? Number(match[1]) : 0;
+  }
+
+  buildIssueBody(spec: SpecDoc, completed: Set<string> = new Set()): string {
+    const featureList = spec.features
+      .map((f) => {
+        const checked = completed.has(f.id) ? 'x' : ' ';
+        const acceptText =
+          f.accept && f.accept.length ? ` (accept: ${f.accept.join('; ')})` : '';
+        return `- [${checked}] ${f.id}${acceptText}`;
+      })
+      .join('\n');
+    return `Spec ID: ${spec.specId}\nFile: ${spec.filePath}\n\nFeatures:\n${featureList}\n`;
   }
 
   async addToProject(
@@ -141,6 +163,15 @@ export class GhClient {
     await this.execGh(`issue close ${issueNumber}`);
   }
 
+  async getIssueBody(issueNumber: number): Promise<string> {
+    return this.execGh(`issue view ${issueNumber} --json body --jq .body`);
+  }
+
+  async updateIssueBody(issueNumber: number, body: string): Promise<void> {
+    const bodyFile = this.createBodyFile(body);
+    await this.execGh(`issue edit ${issueNumber} --body-file "${bodyFile}"`);
+  }
+
   async getPrStatus(pr: string | number): Promise<{
     state: string;
     checksPendingOrFailing: number;
@@ -188,13 +219,6 @@ export class GhClient {
     } catch (error) {
       return [];
     }
-  }
-
-  private formatIssueBody(spec: SpecDoc): string {
-    const featureList = spec.features
-      .map((f) => `- [ ] ${f.id}${f.accept && f.accept.length ? ` (accept: ${f.accept.join('; ')})` : ''}`)
-      .join('\n');
-    return `Spec ID: ${spec.specId}\nFile: ${spec.filePath}\n\nFeatures:\n${featureList}\n`;
   }
 
   private createBodyFile(body: string): string {
@@ -261,5 +285,20 @@ export class GhClient {
     };
     this.projectCache[cacheKey] = result;
     return result;
+  }
+
+  private parseCompletedFeatures(body: string, spec: SpecDoc): Set<string> {
+    const completed = new Set<string>();
+    if (!body) return completed;
+    const lines = body.split(/\r?\n/);
+    for (const line of lines) {
+      if (!line.match(/- \[[xX]\]/)) continue;
+      for (const feat of spec.features) {
+        if (line.includes(feat.id)) {
+          completed.add(feat.id);
+        }
+      }
+    }
+    return completed;
   }
 }
