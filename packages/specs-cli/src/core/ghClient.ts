@@ -544,6 +544,13 @@ export class GhClient {
 
     const status = (await exec(`git status --porcelain`, { cwd: tmpDir })).stdout.trim();
     if (status) {
+      if (!token) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `Warning: wiki changes detected for ${spec.specId} but no GH_TOKEN available; skipping push.`
+        );
+        return { url: wikiUrl };
+      }
       try {
         await exec(`git add "${pageName}.md"`, { cwd: tmpDir });
         await exec(
