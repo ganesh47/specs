@@ -31,6 +31,18 @@ doctor() {
     echo "- specs not installed globally; will fallback to npx."
     echo "  Install with: npm i -g specs"
   fi
+  if [[ -f "$ROOT_DIR/package.json" ]]; then
+    if npm run -s spec-kit:check --if-present >/dev/null 2>&1; then
+      echo "- spec-kit: check passed (npm run spec-kit:check)"
+    else
+      echo "- spec-kit: check failed or unavailable; run 'npm run spec-kit:check' after installing deps"
+    fi
+  fi
+  if [[ -d "$ROOT_DIR/.specs/spec-kit" ]]; then
+    echo "- spec-kit templates present at .specs/spec-kit (refresh with codex specs scan --refresh-spec-kit)"
+  else
+    echo "- spec-kit templates missing; refresh with codex specs scan --refresh-spec-kit"
+  fi
   echo "- To refresh spec-kit templates: codex specs scan --refresh-spec-kit"
   echo "- To uninstall: npm rm -g specs; remove .codex/commands/specs to disable the hook"
 }
