@@ -544,11 +544,17 @@ export class GhClient {
 
     const status = (await exec(`git status --porcelain`, { cwd: tmpDir })).stdout.trim();
     if (status) {
-      await exec(`git add "${pageName}.md"`, { cwd: tmpDir });
-      await exec(`git -c user.name="specs-bot" -c user.email="specs@example.com" commit -m "Update wiki for ${spec.specId}"`, {
-        cwd: tmpDir,
-      });
-      await exec(`git push`, { cwd: tmpDir });
+      try {
+        await exec(`git add "${pageName}.md"`, { cwd: tmpDir });
+        await exec(
+          `git -c user.name="specs-bot" -c user.email="specs@example.com" commit -m "Update wiki for ${spec.specId}"`,
+          { cwd: tmpDir }
+        );
+        await exec(`git push`, { cwd: tmpDir });
+      } catch (error: any) {
+        // eslint-disable-next-line no-console
+        console.warn(`Warning: failed to push wiki update for ${spec.specId}: ${error?.stderr || error?.message || error}`);
+      }
     }
 
     return { url: wikiUrl };
