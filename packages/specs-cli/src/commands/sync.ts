@@ -29,7 +29,11 @@ export function registerSync(program: Command) {
       const labels = config.github?.issue_labels || ['spec'];
       for (const spec of specs) {
         try {
-          const issueNumber = await gh.upsertIssue(spec, labels);
+          const adrUrl = await gh.ensureAdrDiscussion(spec);
+          const issueNumber = await gh.upsertIssue(spec, labels, { adrUrl });
+          const wiki = await gh.ensureWikiPage(spec, adrUrl, issueNumber);
+          // Update issue once wiki is created to ensure link is present.
+          await gh.upsertIssue(spec, labels, { adrUrl, wikiUrl: wiki.url });
           // eslint-disable-next-line no-console
           console.log(`Synced spec ${spec.specId} -> issue #${issueNumber || '?'} `);
           if (issueNumber) {

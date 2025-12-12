@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# codex specs: delegate to specs CLI with fallback and a simple doctor mode.
+
+SPEC_CMD="specs"
+if ! command -v specs >/dev/null 2>&1; then
+  SPEC_CMD="npx specs"
+fi
+
+if [[ "${1-}" == "--doctor" || "${1-}" == "doctor" ]]; then
+  echo "Codex specs doctor:"
+  if command -v specs >/dev/null 2>&1; then
+    echo "- specs found at $(command -v specs)"
+    specs --version || true
+  else
+    echo "- specs not installed globally; falling back to npx."
+    echo "  Install with: npm i -g specs"
+  fi
+  exit 0
+fi
+
+eval "$SPEC_CMD" "$@"

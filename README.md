@@ -21,7 +21,14 @@ codex spec-next
 - GitHub CLI (`gh`) installed and authenticated for sync/approval/PR actions
 
 ## Using with Codex CLI
-Place executable scripts in `.codex/commands/` (provided in this repo) so Codex can invoke `specs` commands as native subcommands.
+Place executable scripts in `.codex/commands/` (provided in this repo) so Codex can invoke `specs` commands as native subcommands:
+- `codex specs` (new): delegates to `specs` or `npx specs` and supports `--doctor` to report install status/version.
+- `codex spec-next`, `codex spec-sync`, `codex spec-coverage`, `codex approve`: wrappers that call specs CLI/gh helpers directly.
+
+Install/upgrade/uninstall:
+- Global: `npm i -g specs` (upgrade with `npm i -g specs@latest`, uninstall with `npm rm -g specs`).
+- Local fallback: `npx specs <verb>` (used automatically by `codex specs` if global is missing).
+- Optional: set `PATH` to the repo-built binary (`packages/specs-cli/bin/specs.js`) for development.
 
 ## Repository layout
 - `packages/specs-cli`: the main CLI
