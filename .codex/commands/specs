@@ -1,23 +1,44 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# codex specs: delegate to specs CLI with fallback and a simple doctor mode.
+# codex specs: delegate to specs CLI with discovery + doctor.
 
-SPEC_CMD="specs"
-if ! command -v specs >/dev/null 2>&1; then
-  SPEC_CMD="npx specs"
-fi
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-if [[ "${1-}" == "--doctor" || "${1-}" == "doctor" ]]; then
-  echo "Codex specs doctor:"
+choose_specs() {
+  local local_bin="$ROOT_DIR/packages/specs-cli/bin/specs.js"
+  if [[ -x "$local_bin" ]]; then
+    echo "node $local_bin|local"
+    return
+  fi
   if command -v specs >/dev/null 2>&1; then
-    echo "- specs found at $(command -v specs)"
+    echo "$(command -v specs)|global"
+    return
+  fi
+  echo "npx specs|npx"
+}
+
+doctor() {
+  echo "Codex specs doctor:"
+  IFS='|' read -r cmd source <<<"$(choose_specs)"
+  echo "- source: $source"
+  echo "- command: $cmd"
+  if [[ "$source" == "local" ]]; then
+    node "$ROOT_DIR/packages/specs-cli/bin/specs.js" --version || true
+  elif [[ "$source" == "global" ]]; then
     specs --version || true
   else
-    echo "- specs not installed globally; falling back to npx."
+    echo "- specs not installed globally; will fallback to npx."
     echo "  Install with: npm i -g specs"
   fi
+  echo "- To refresh spec-kit templates: codex specs scan --refresh-spec-kit"
+  echo "- To uninstall: npm rm -g specs; remove .codex/commands/specs to disable the hook"
+}
+
+if [[ "${1-}" == "--doctor" || "${1-}" == "doctor" ]]; then
+  doctor
   exit 0
 fi
 
+IFS='|' read -r SPEC_CMD SOURCE <<<"$(choose_specs)"
 eval "$SPEC_CMD" "$@"
