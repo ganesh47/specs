@@ -22,29 +22,35 @@ jobs:
         run: |
           set -euo pipefail
 
-          body=$(gh pr view "$PR_NUMBER" --json body --jq .body)
-
-          issue=$(printf "%s" "$body" | grep -oE "#[0-9]+" | head -n1 | tr -d '#')
+          pr_body=$(gh pr view "$PR_NUMBER" --json body --jq .body)
+          issue=$(printf "%s" "$pr_body" | grep -oE "#[0-9]+" | head -n1 | tr -d '#')
           if [ -z "${issue:-}" ]; then
             echo "Missing spec issue reference (#123) in PR body."
             exit 1
           fi
 
-          adr_url=$(printf "%s" "$body" | grep -oE "https://github.com/.+/discussions/[0-9]+" | head -n1 || true)
-          if [ -z "${adr_url:-}" ]; then
-            echo "Missing ADR discussion URL in PR body."
-            exit 1
-          fi
-
-          wiki_url=$(printf "%s" "$body" | grep -oE "https://github.com/.+/wiki/[^ )\"]+" | head -n1 || true)
-          if [ -z "${wiki_url:-}" ]; then
-            echo "Missing wiki URL in PR body."
-            exit 1
-          fi
-
-          issue_state=$(gh issue view "$issue" --json state --jq .state)
+          issue_body=$(gh issue view "$issue" --json body,state --jq '{body:.body,state:.state}')
+          issue_state=$(printf "%s" "$issue_body" | jq -r .state)
           if [ "$issue_state" != "OPEN" ]; then
             echo "Spec issue #$issue is not open (state=$issue_state)."
+            exit 1
+          fi
+          issue_text=$(printf "%s" "$issue_body" | jq -r .body)
+
+          adr_url_pr=$(printf "%s" "$pr_body" | grep -oE "https://github.com/.+/discussions/[0-9]+" | head -n1 || true)
+          wiki_url_pr=$(printf "%s" "$pr_body" | grep -oE "https://github.com/.+/wiki/[^ )\"]+" | head -n1 || true)
+          adr_url_issue=$(printf "%s" "$issue_text" | grep -oE "https://github.com/.+/discussions/[0-9]+" | head -n1 || true)
+          wiki_url_issue=$(printf "%s" "$issue_text" | grep -oE "https://github.com/.+/wiki/[^ )\"]+" | head -n1 || true)
+
+          adr_url=${adr_url_pr:-$adr_url_issue}
+          wiki_url=${wiki_url_pr:-$wiki_url_issue}
+
+          if [ -z "${adr_url:-}" ]; then
+            echo "Missing ADR discussion URL in PR or issue body."
+            exit 1
+          fi
+          if [ -z "${wiki_url:-}" ]; then
+            echo "Missing wiki URL in PR or issue body."
             exit 1
           fi
 
