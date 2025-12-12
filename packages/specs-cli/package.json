@@ -1,6 +1,6 @@
 {
   "name": "specs",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Spec-Driven Development Kit CLI",
   "bin": {
     "specs": "./bin/specs.js"

@@ -1,6 +1,6 @@
 {
   "name": "specs-coverage-action",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "GitHub Action to run specs coverage",
   "main": "dist/index.js",
   "files": [
